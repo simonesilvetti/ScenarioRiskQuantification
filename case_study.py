@@ -124,6 +124,19 @@ def is_result(df_is, df_mc):
     sigma = np.sqrt(np.sum((values - prob)**2)) / len(values)
     print("  Probability of injury:    {:.2e} +/- {:.2e}".format(prob, sigma))
 
+def is_result_new(df_is, df_mc):
+    print("Importance sampling:")
+    values = (df_is["result"] < 0) * df_is["density_orig"] / df_is["density_is"]
+    values *= (np.sum(df_mc["tries"]) / len(df_mc)) / (np.sum(df_is["tries"]) / len(df_is))
+    prob_collision = np.mean(values)
+    sigma_collision = np.sqrt(np.sum((values - prob_collision)**2)) / len(values)
+    print("  Probability of collision: {:.2e} +/- {:.2e}".format(prob_collision, sigma_collision))
+    values = df_is["kpi"] * df_is["density_orig"] / df_is["density_is"]
+    values *= (np.sum(df_mc["tries"]) / len(df_mc)) / (np.sum(df_is["tries"]) / len(df_is))
+    prob_injury = np.mean(values)
+    sigma_injury = np.sqrt(np.sum((values - prob_injury)**2)) / len(values)
+    print("  Probability of injury:    {:.2e} +/- {:.2e}".format(prob_injury, sigma_injury))
+    return prob_collision, sigma_collision, prob_injury, sigma_injury
 
 def case_study(options, overwrite=False):
     df_mc = monte_carlo(options, overwrite=overwrite)
@@ -132,6 +145,13 @@ def case_study(options, overwrite=False):
     df_is = importance_sampling(kde_is, options, overwrite=overwrite)
     is_result(df_is, df_mc)
     return df_mc, df_is
+
+def case_study_new(options, overwrite=False):
+    df_mc = monte_carlo(options, overwrite=overwrite)
+    mc_result(df_mc)
+    kde_is = create_is(df_mc, options, overwrite=overwrite)
+    df_is = importance_sampling(kde_is, options, overwrite=overwrite)
+    return is_result_new(df_is, df_mc)
 
 
 MU_REACTIONTIME = np.log(.92**2/np.sqrt(.92**2+.28**2))
